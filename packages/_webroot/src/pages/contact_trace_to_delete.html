@@ -1,0 +1,480 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3pro.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="css/dxc.css">
+  </head>
+<body>
+<div class="container" id="form">
+  <form action method="POST">
+    <div class="row">
+      <div class="col-25">
+        <label for="email">Employee Email ID</label>
+      </div>
+      <div class="col-75">
+        <input type="text" id="email" name="email">
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-25">
+        <label for="role">Role</label>
+      </div>
+      <div class="col-75">
+        <select id="role" name="role">
+          <option value="employee">Employee</option>
+          <option value="facility admin">Facility Admin</option>
+          <option value="cleaner">Cleaner</option>
+        </select>
+      </div>
+    </div>
+   
+    <div class="row">
+      <button type="button" onclick="getFirstTimeLoginSlugid()">Submit</button>
+    </div>
+  </form>
+</div>
+<div class="container" id="locationform">
+  <form action method="POST">
+
+    <div class="row">
+      <div class="col-25">
+        <label for="region">Region</label>
+      </div>
+      <div class="col-75">
+        <select id="region" name="region" onchange="siteCode()">
+          <option value="" default >SELECT</option>
+          <option value="IN">INDIA</option>
+          <option value="AUS">AUSTRALIA</option>
+          <option value="SNG">SINGAPORE</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-25">
+        <label for="sitecode">Site Code</label>
+      </div>
+      <div class="col-75">
+        <select name="sitecode" id="sitecode" onchange="siteInfo(this.value)">
+                  </select>
+      </div>
+    </div>
+
+    <div>
+       <label >Site Name:</label>
+      
+        <label for="sitename" id="SiteName"></label><label for="address" id ="Address"></label>
+    </div>
+
+    <!--<div>
+      
+        <label >Address:</label>
+        <label for="address" id ="Address"></label>
+        
+    </div> -->
+
+    <div class="row">
+      <div class="col-25">
+        <label for="level">Level</label>
+      </div>
+      <div class="col-75">
+        <select id="Levels" name="Levels" onchange="LevelCall(this.value)">
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-25">
+        <label for="position">Position</label>
+      </div>
+      <div class="col-75">
+        <select id="Position" name="Position">
+        </select>
+      </div>
+    </div>
+   
+    <div class="row">
+      <button type="button" onclick="upload_firsttime_location()">Submit</button>
+    </div>
+  </form>
+</div>
+<script>
+function disable_input(){
+  var element = document.getElementById("form");
+  element.style.display="none"
+  //alert("disable_input");
+          }
+function enable_input(){
+  var element = document.getElementById("form");
+  element.style.display="block";
+	   }
+function disable_location(){
+         var element = document.getElementById("locationform");
+       element.style.display="none"
+     
+       }
+function enable_location(){
+        var element = document.getElementById("locationform");
+        element.style.display="block"; 
+  }
+
+
+
+function setCookie(cname, cvalue, exdays) {
+      var d = new Date();
+      d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+      var expires = "expires="+d.toUTCString();
+      document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+         
+//Get Cookies 
+  function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i = 0; i < ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+var floorIDn="";
+var user="";
+var type="";
+var strSlugid = location.search;
+strSlugid = strSlugid.slice( 1 );
+
+
+function checkCookie() {
+      user = getCookie("empUUIDn");
+      type =getCookie("type")
+      if (user != ""&& type!="") {
+      disable_input();
+  disable_location();
+  //alert("Welcome again " + user);
+  update_user_scanned_details(user);
+      } else {
+
+enable_input();	
+disable_location();
+        if (user != "" && user != null && role!="" && role!=null) {
+
+        }
+      }
+    }
+checkCookie();
+
+//alert(strSlugid)
+
+function getFirstTimeLoginSlugid() {  // SlugID API 1
+  user=document.getElementById("email").value;
+  type=document.getElementById("role").value;
+  var apiURL = "https://29jmz5rsh6.execute-api.us-east-2.amazonaws.com/prod";
+
+  var strParams = {};
+  strParams = {
+      "empid" : user,
+      "function":"createNewSlugId",
+              "Update_date": getCurrentDatetime(),
+              "type": type
+          }
+//alert(JSON.stringify( strParams)); 
+let xhttp = new XMLHttpRequest();
+xhttp.onreadystatechange = function() {
+    if ( this.readyState == 4 && this.status == 200 ) {
+        response = JSON.parse( this.responseText );
+        //alert(this.responseText);
+        switch( response[ 'statusCode' ] ) {
+                  case 400:
+                      alert( "1 DB Error" );
+                      break;
+                  case 404:
+                      alert( "1 Invalid Request" );
+                      break;
+                  case 200:
+                      message = response['slug'];
+                      //alert( message );
+                      setCookie("empUUIDn", message, 365);
+                      setCookie("type",type,365);
+                      user = message;
+      
+      //alert("After setting "+user);
+                      if ( strSlugid != null ) {
+                                     update_user_scanned_details(user);  // 2nd API
+                                 }
+                                       break;
+
+              }
+      }
+			
+			
+  };
+             xhttp.open( "POST", apiURL );
+           xhttp.send( JSON.stringify( strParams ) );
+ }
+		 
+
+	
+		
+		 function getCurrentDatetime(){
+		    var today = new Date();
+            var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+            var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+            var dateTime = date+' '+time;
+            return dateTime;		 
+		 }
+     function update_user_scanned_details(){  // API 2
+
+var apiURL = "https://84tqlnkdug.execute-api.us-east-2.amazonaws.com/test/QRcode_scan_entry";
+    var strParams = {};
+
+    strParams = {
+      "EmpUUID" : user,
+      "QRUUID" : strSlugid,
+      "Scan_date": getCurrentDatetime()
+    }
+    //alert( "api2"+ JSON.stringify( strParams)); 
+
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if ( this.readyState == 4 && this.status == 200 ) {
+            response = JSON.parse( this.responseText );
+            switch( response[ 'statusCode' ] ) {
+                case 400:
+                    alert( "2 DB Error" );
+                    break;
+                case 404:
+                    alert( "2 Invalid Request" );
+                    break;
+                case 200:
+                    message = response[ 'requestType' ];
+                    //alert(message);
+                    if(message == "LocDetail"){
+                       //upload_firsttime_location();
+                       disable_input();
+                       enable_location();
+      
+                    }else {
+      
+                       disable_input() ;	
+                       disable_location();		    
+                       displayTickSymbol();
+                    }
+
+                    break;
+
+            }
+        }
+
+
+};
+ xhttp.open( "POST", apiURL );
+ xhttp.send( JSON.stringify( strParams ) );
+
+}
+function upload_firsttime_location() {  // Location Update API 3
+   //var location  = document.getElementById("location").value;	
+    var apiURL = "https://bn3ydtt6q1.execute-api.us-east-2.amazonaws.com/test/QRcode-scan-update";
+   
+    var strParams1 = {};
+    strParams1 = {
+      "floorMapUUID": floorIDn,
+      "EmpUUID" : user,
+      "QRUUID": strSlugid,
+      "Update_date": getCurrentDatetime()
+    }
+    //alert("api3" + JSON.stringify( strParams1)); 
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if ( this.readyState == 4 && this.status == 200 ) {
+            response = JSON.parse( this.responseText );
+            switch( response[ 'statusCode' ] ) {
+                case 400:
+                    alert( "3 DB Error" );
+                    break;
+                case 404:
+                    alert( "3 Invalid Request" );
+                    break;
+                case 200:
+                    
+                    message = response[ 'body' ];
+                //alert(message);
+                   if(message == "scan success"){
+                     //alert("3 A tick mark should display");	
+                     disable_input();
+                     disable_location();
+                     displayTickSymbol();
+                      
+                   }
+                    break;
+                }
+        }
+
+
+    };
+    xhttp.open( "POST", apiURL );
+    xhttp.send( JSON.stringify( strParams1 ) );
+}
+
+
+
+function displayTickSymbol(){
+var element = document.getElementById("id01");
+element.innerHTML = "<br><br><center>Successfully Registered: <span style=\"color:green; font-size: 20pt\">&#9989;</span></center>";
+var element2 = document.getElementById("id02");
+element2.innerHTML = "<br><br><center>Thank you for your support: <i style=\"font-size:24px\" class=\"fa\">&#xf087;</i>";
+
+}
+
+var responseDetails=[];
+var SiteName="";
+var Address="";
+var Levels=[];
+var Position1=[];
+var arr=[]; 
+function siteInfo (data){
+
+
+  var apiURL = "https://nyl9nsrkm1.execute-api.us-east-2.amazonaws.com/dev/m2m_RTW-NCT";
+   
+   
+   var strParams = {};
+   strParams = {
+    "siteCode":data
+
+   }
+   //alert(JSON.stringify( strParams)); 
+   let xhttp = new XMLHttpRequest();
+   xhttp.onreadystatechange = function() {
+       if ( this.readyState == 4 && this.status == 200 ) {
+           response = JSON.parse( this.responseText );
+           //alert(response);
+           switch( response[ 'statusCode' ] ) {
+               case 400:
+                   alert( "3.1 DB Error" );
+                   break;
+               case 404:
+                   alert( "3.1 Invalid Request" );
+                   break;
+               case 200:
+                   
+                   arr = response[ 'body' ];
+                   //alert(arr[0]["SiteCode"]);
+                  //alert(arr);   
+                   mainlist(data)              
+  
+                   break;
+
+           }
+}
+
+
+};
+xhttp.open( "POST", apiURL );
+xhttp.send( JSON.stringify( strParams ) );
+
+ };
+function mainlist(data){
+  responseDetails= arr.filter(function(item){
+    return item.SiteCode == data; 
+ 
+})
+function makeList(item){
+    SiteName = item.SiteName;
+    Address = item.Address;
+    Levels.indexOf(item.Levels) === -1 ? Levels.push(item.Levels):"";
+   // Levels.indexOf(newItem)push(item.Levels);
+   Position1.indexOf(item.Position) === -1 ? Position1.push(item.Position):"";
+   floorIDn = item.floorMapUUID;
+
+
+var selectSiteName = document.getElementById("SiteName"); 
+    selectSiteName.innerHTML = SiteName;
+
+
+var selectAddress = document.getElementById("Address"); 
+    selectAddress.innerHTML = Address;
+
+
+var selectLevels = document.getElementById("Levels"); 
+selectLevels.innerHTML = "";
+for(var i = 0; i < Levels.length; i++) {
+    var opt = Levels[i];
+    selectLevels.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
+}
+
+var selectPosition = document.getElementById("Position"); 
+selectPosition.innerHTML = "";
+for(var i = 0; i < Position1.length; i++) {
+    var opt = Position1[i];
+    selectPosition.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
+}
+
+}
+console.log(responseDetails) ;
+
+responseDetails.forEach(makeList); 
+//alert("make change" + SiteName);
+}
+
+function siteCode(){
+  var countryLocation  = document.getElementById("region").value;	
+  var apiURL = "https://nyl9nsrkm1.execute-api.us-east-2.amazonaws.com/dev/m2m_RTW-NCT";
+   
+   
+   var strParams = {};
+   strParams = {
+    "Region_data":countryLocation 
+
+   }
+   //alert(JSON.stringify( strParams)); 
+   let xhttp = new XMLHttpRequest();
+   xhttp.onreadystatechange = function() {
+       if ( this.readyState == 4 && this.status == 200 ) {
+     response = JSON.parse( this.responseText );
+           switch( response[ 'statusCode' ] ) {
+                case 400:
+                   alert( "3.1 DB Error" );
+                   break;
+                case 404:
+                   alert( "3.1 Invalid Request" );
+                   break;
+                case 200:
+                   
+                   message = response[ 'body' ];
+                  //alert(message);
+                  var selectSiteCode = document.getElementById("sitecode"); 
+                  selectSiteCode.innerHTML = "<option value=\"\" default >SELECT</option>";
+                  for(var i = 0; i < message.length; i++) {
+                    var opt = message[i];
+                    selectSiteCode.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
+                  }
+  
+                   break;
+
+           }
+}
+
+
+};
+xhttp.open( "POST", apiURL );
+xhttp.send( JSON.stringify( strParams ) );
+}
+
+
+
+
+  </script>
+
+  <h3 id="id01"></h3>
+  <p id="id02"></p>
+  
+</body>
+</html>

@@ -1,0 +1,267 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Soteria tracing stack
+
+Resources:
+  #!##############################################
+  #! AWS::DynamoDB ::*
+  #!##############################################
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-datastore
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+        - AttributeName: gsi2pk
+          AttributeType: S
+        - AttributeName: gsi2sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: "ALL"
+
+        - IndexName: GSI2
+          KeySchema:
+            - AttributeName: gsi2pk
+              KeyType: HASH
+            - AttributeName: gsi2sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: "ALL"
+
+  #!##############################################
+  #! AWS::DynamoDB Stream::*
+  #!##############################################
+
+  LambdaDynamboDbStream:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Handler: lambda_function.lambda_handler
+      CodeUri: ../packages/ddbStream
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          TABLE: !Ref DynamoDBTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - DynamoDBStreamReadPolicy:
+            TableName: !Ref DynamoDBTable
+            StreamName: "*"
+      Events:
+        DDBEvent:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt DynamoDBTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+            Enabled: true
+
+  #!##############################################
+  #! AWS::API::*
+  #!##############################################
+
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      OpenApiVersion: 3.0.1
+      StageName: !Select [2, !Split ["-", !Ref AWS::StackName]]
+      BinaryMediaTypes:
+        - application/pdf
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+
+  ApiGatewayBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: !Select [3, !Split ["-", !Ref AWS::StackName]]
+      DomainName:
+        Fn::ImportValue: !Join
+          - "-"
+          - - !Select [0, !Split ["-", !Ref AWS::StackName]]
+            - !Select [1, !Split ["-", !Ref AWS::StackName]]
+            - !Select [2, !Split ["-", !Ref AWS::StackName]]
+            - "api-domainName"
+      RestApiId: !Ref Api
+      Stage: !Ref Api.Stage
+
+  #!##############################################
+  #! AWS::Lambda::*
+  #!##############################################
+
+  LambdaUsersService:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Handler: lambda_function.lambda_handler
+      CodeUri: ../packages/users
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          TABLE: !Ref DynamoDBTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Events:
+        PostUsers:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: post
+            RestApiId: !Ref Api
+        GetUser:
+          Type: Api
+          Properties:
+            Path: /users/{userId}
+            Method: get
+            RestApiId: !Ref Api
+        GetUserCheckins:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/checkins
+            Method: get
+            RestApiId: !Ref Api
+        PostUserCheckins:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/checkins
+            Method: post
+            RestApiId: !Ref Api
+        PostUserCheckouts:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/checkouts
+            Method: post
+            RestApiId: !Ref Api
+        PostUserSanitizations:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/sanitizations
+            Method: post
+            RestApiId: !Ref Api
+
+  #############################################
+  ## Locations
+  #############################################
+
+  LambdaLocationsService:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.8
+      Handler: lambda_function.lambda_handler
+      CodeUri: ../packages/locations
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          TABLE: !Ref DynamoDBTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Events:
+        GetLocations:
+          Type: Api
+          Properties:
+            Path: /locations
+            Method: get
+            RestApiId: !Ref Api
+        PostLocations:
+          Type: Api
+          Properties:
+            Path: /locations
+            Method: post
+            RestApiId: !Ref Api
+        BulkLocations:
+          Type: Api
+          Properties:
+            Path: /bulkLocations
+            Method: post
+            RestApiId: !Ref Api
+        GetLocation:
+          Type: Api
+          Properties:
+            Path: /locations/{locationId}
+            Method: get
+            RestApiId: !Ref Api
+        PatchLocation:
+          Type: Api
+          Properties:
+            Path: /locations/{locationId}
+            Method: patch
+            RestApiId: !Ref Api
+        GetLocationCheckins:
+          Type: Api
+          Properties:
+            Path: /locations/{locationId}/checkins
+            Method: get
+            RestApiId: !Ref Api
+
+  #############################################
+  ## QR
+  #############################################
+  LambdaQrService:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs12.x
+      Handler: lambda_function.lambda_handler
+      CodeUri: ../packages/qr
+      Timeout: 30
+      MemorySize: 1024
+      Environment:
+        Variables:
+          DOMAIN_URL:
+            Fn::ImportValue: !Sub
+              - ${Project}-${Tenant}-${Environment}-domains-UserDomainName
+              - Project: !Select [0, !Split ["-", !Ref AWS::StackName]]
+                Tenant: !Select [1, !Split ["-", !Ref AWS::StackName]]
+                Environment: !Select [2, !Split ["-", !Ref AWS::StackName]]
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /qr
+            Method: post
+            RestApiId: !Ref Api
+  #!##############################################
+  #! Outputs
+  #!##############################################
+Outputs:
+  ApiUrl:
+    Description: API URL
+    Value: !Sub
+      - https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+      - Stage: !Select [2, !Split ["-", !Ref AWS::StackName]]
+    Export:
+      Name: !Sub ${AWS::StackName}-api-url

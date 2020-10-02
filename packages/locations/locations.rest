@@ -1,0 +1,92 @@
+@hostname = c26epw7e29.execute-api.us-east-1.amazonaws.com/sbx
+@contentType = application/json
+
+###
+# Gets all locations
+# @name getLocations
+GET https://{{hostname}}/locations HTTP/1.1
+Content-Type: {{contentType}}
+
+###
+# Adds a single location
+POST https://{{hostname}}/locations HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 2"
+}
+
+###
+# Adds a list of locations with only locationCode
+POST https://{{hostname}}/locations HTTP/1.1
+Content-Type: {{contentType}}
+
+[
+    {
+        "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 2"
+    },
+    {
+        "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 1"
+    },
+    {
+        "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 3"
+    }
+]
+
+###
+# Adds a list of locations with attributes
+POST https://{{hostname}}/locations HTTP/1.1
+Content-Type: {{contentType}}
+
+[
+    {
+        "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 2",
+        "capacity": 12
+    },
+    {
+        "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 1",
+        "capacity": 8
+    },
+    {
+        "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 3",
+        "capacity": 10,
+        "description": "Velit sit ullamco mollit ipsum ad velit aliquip voluptate."
+    },
+    {
+        "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 4",
+        "capacity": 10,
+        "description": "Velit sit ullamco mollit ipsum ad velit aliquip voluptate."
+    }
+]
+
+###
+# Adds a list of locations with attributes
+@locationId = 330d0c1d-38e0-4901-a224-8de3e91a8ff3
+
+GET https://{{hostname}}/locations/{{locationId}} HTTP/1.1
+Content-Type: {{contentType}}
+
+
+###
+# Update a location with attributes
+@locationId = 330d0c1d-38e0-4901-a224-8de3e91a8ff3
+
+PATCH https://{{hostname}}/locations/{{locationId}} HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "capacity": 1555,
+    "description": "Est dolor aute quis cillum laboris in ex irure dolore incididunt mollit incididunt."
+}
+
+###
+# Add a locationCode to a location
+
+@locationId = 7cd4061f-c548-4cc9-bf0a-9701271fdd28
+
+PATCH https://{{hostname}}/locations/{{locationId}} HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "locationCode": "Australia#Victoria#Collins#Level19#Innovation Room#Table 4"
+}

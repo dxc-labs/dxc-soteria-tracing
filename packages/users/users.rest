@@ -1,0 +1,22 @@
+@hostname = c26epw7e29.execute-api.us-east-1.amazonaws.com/sbx
+@contentType = application/json
+
+@userId = person123
+@locationId = location123
+###
+# Adds a checkin for userId
+POST https://{{hostname}}/users/{{userId}}/checkins HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "locationId": "{{locationId}}"
+}
+
+###
+# Adds a checkout for userId
+POST https://{{hostname}}/users/{{userId}}/checkouts HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "locationId": "{{locationId}}"
+}

@@ -1,0 +1,49 @@
+.content{
+	box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    text-align:"center";
+	margin:"auto"
+}
+
+.dxc_logo{
+	max-width: 200px;
+    min-width: 100px;
+    min-height: 10px;
+    height: 5%;
+	width:100%;
+	
+}
+
+.header{
+	background-color: black;
+	border-radius: 5px;
+        color: white;
+        padding: 12px 20px;
+        margin:0px 5px 20px 5px;
+        border: none;
+}
+
+.alignright {
+  padding: 5px 6px 10px 10px; 
+  display: inline-block;
+  float:right;
+  vertical-align: middle;
+  font-size: 13px;
+} 
+.footer {
+        padding-Bottom: '5px';
+        padding-Top: '20px';
+        text-Align: 'center';
+}
+.body{
+	padding: 0px 10px 
+}
+
+@media only screen and (min-width: 768px){
+.content{
+	box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    margin: auto;
+	width:50%;
+}
+	
+	
+}

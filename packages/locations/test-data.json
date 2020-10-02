@@ -1,0 +1,7 @@
+[
+  {
+    "resource": "/locations",
+    "path": "/locations",
+    "httpMethod": "GET"
+  }
+]
